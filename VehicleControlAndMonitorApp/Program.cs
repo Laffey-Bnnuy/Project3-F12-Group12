@@ -1,40 +1,36 @@
-﻿using System;
-using EVSystem.Interfaces;
+﻿using EVSystem.Communication;
 using EVSystem.Components;
 using EVSystem.Mock;
+using System;
+using System.Threading;
 
-class Program
+namespace EVSystem
 {
-    static void Main(string[] args)
+    class Program
     {
-        var adapter = new MockJ1939Adapter();
+        static void Main(string[] args)
+        {
+            Console.WriteLine("=== EV System Simulation ===");
 
-        IBattery battery = new BatteryMonitor(adapter);
-        IChargingControl charger = new ChargingControl(adapter);
+            var j1939 = new MockJ1939Adapter();
+            j1939.Register();
 
-        Console.WriteLine("EV System Simulation");
+            var batteryMonitor = new BatteryMonitor(j1939, "battery_data.txt");
 
-        Console.WriteLine("\nInitial battery status:");
-        Console.WriteLine(battery.GetStatus());
+            Console.WriteLine("Starting battery simulation\n");
 
-        Console.WriteLine("\nSet battery mode to sport");
-        battery.SetBatteryMode("Sport");
-        Console.WriteLine("Battery current status: \n");
-        Console.WriteLine(battery.GetStatus());
+            
+            while (true)
+            {
+                batteryMonitor.LoadNextData();
 
-        Console.WriteLine("\nBattery now only have 80%");
-        battery.UpdateBatteryLevel(80);
+                Console.WriteLine(batteryMonitor.GetStatus());
 
-        Console.WriteLine("Battery current status: \n");
-        Console.WriteLine(battery.GetStatus());
+                Thread.Sleep(2000);
+            }
 
-
-
-        Console.WriteLine("\nSchedule charging for tonight");
-        charger.ScheduleCharging("23:00 - 05:00");
-
-        Console.WriteLine("\nThe schedule is: "+charger.GetSchedule());
-
-        adapter.Leave();
+            
+            j1939.Leave();
+        }
     }
 }

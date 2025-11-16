@@ -15,6 +15,7 @@ namespace EVSystem.Interfaces
         void UpdateBatteryLevel(float level);
         void SetBatteryMode(string mode);
         string GetStatus();
+        public void LoadNextData();
     }
 
 }

@@ -11,16 +11,43 @@ public class BatteryMonitor : IBattery
     public float RemainingKm { get; private set; }
     public string BatteryMode { get; private set; }
 
-    public BatteryMonitor(J1939Adapter j1939Adapter)
-    {
-        _j1939Adapter = j1939Adapter;
-        _j1939Adapter.Register();
+    private readonly string _dataFilePath;
+    private string[] _dataLines;
+    private int _currentIndex = 0;
 
-        BatteryLevel = 100f;
-        Temperature = 25f;
-        BatteryMode = "Normal";
+    public BatteryMonitor(J1939Adapter adapter, string dataFile)
+    {
+        _j1939Adapter = adapter;
+        _dataFilePath = dataFile;
+        _dataLines = File.ReadAllLines(_dataFilePath);
+    }
+
+    public void LoadNextData()
+    {
+        if (_dataLines.Length == 0) return;
+
+        string line = _dataLines[_currentIndex];
+        _currentIndex = (_currentIndex + 1) % _dataLines.Length;
+
+        var parts = line.Split(',');
+
+        foreach (var part in parts)
+        {
+            var kv = part.Split('=');
+
+            if (kv[0] == "BatteryLevel")
+                UpdateBatteryLevel(float.Parse(kv[1]));
+
+            if (kv[0] == "Temperature")
+                Temperature = float.Parse(kv[1]);
+
+            if (kv[0] == "Mode")
+                SetBatteryMode(kv[1]);
+        }
+
         UpdateDriveEstimates();
     }
+
 
     public void SetBatteryMode(string mode)
     {
